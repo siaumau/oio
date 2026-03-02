@@ -45,7 +45,7 @@ function handleColumns($method, $id, $db) {
 // GET /api/columns
 // ========================================
 function getColumnsList($user_id, $db) {
-    $sql = "SELECT id, name, col_order FROM user_columns WHERE user_id = ? ORDER BY col_order ASC";
+    $sql = "SELECT id, name, col_order, is_enabled FROM user_columns WHERE user_id = ? ORDER BY col_order ASC";
 
     $stmt = $db->prepare($sql);
     $stmt->bind_param('i', $user_id);
@@ -103,14 +103,15 @@ function createColumn($user_id, $db) {
     $col_order = ($row['max_order'] ?? -1) + 1;
 
     // 插入新栏位
-    $sql = "INSERT INTO user_columns (user_id, name, col_order) VALUES (?, ?, ?)";
+    $is_enabled = 1;
+    $sql = "INSERT INTO user_columns (user_id, name, col_order, is_enabled) VALUES (?, ?, ?, ?)";
     $stmt = $db->prepare($sql);
-    $stmt->bind_param('isi', $user_id, $name, $col_order);
+    $stmt->bind_param('isii', $user_id, $name, $col_order, $is_enabled);
 
     if ($stmt->execute()) {
         $column_id = $db->insert_id;
         Response::success(
-            ['id' => $column_id, 'name' => $name, 'col_order' => $col_order],
+            ['id' => $column_id, 'name' => $name, 'col_order' => $col_order, 'is_enabled' => $is_enabled],
             '栏位创建成功',
             201
         );
@@ -120,9 +121,9 @@ function createColumn($user_id, $db) {
 }
 
 // ========================================
-// 更新栏位名称
+// 更新栏位
 // PUT /api/columns/:id
-// Body: { "name": "新栏位名" }
+// Body: { "name": "新栏位名", "col_order": 2, "is_enabled": 1 }
 // ========================================
 function updateColumn($user_id, $column_id, $db) {
     $input = json_decode(file_get_contents('php://input'), true);
@@ -131,18 +132,8 @@ function updateColumn($user_id, $column_id, $db) {
         Response::error('请求体为空', 400);
     }
 
-    $name = trim($input['name'] ?? '');
-
-    if (empty($name) || strlen($name) < 2) {
-        Response::error('栏位名称至少 2 个字符', 400);
-    }
-
-    if (strlen($name) > 50) {
-        Response::error('栏位名称不超过 50 个字符', 400);
-    }
-
     // 验证栏位是否属于该用户
-    $verify_sql = "SELECT id FROM user_columns WHERE id = ? AND user_id = ?";
+    $verify_sql = "SELECT id, name FROM user_columns WHERE id = ? AND user_id = ?";
     $stmt = $db->prepare($verify_sql);
     $stmt->bind_param('ii', $column_id, $user_id);
     $stmt->execute();
@@ -152,24 +143,85 @@ function updateColumn($user_id, $column_id, $db) {
         Response::error('栏位不存在或无权限修改', 404);
     }
 
-    // 检查新名称是否已存在
-    $check_sql = "SELECT id FROM user_columns WHERE user_id = ? AND name = ? AND id != ?";
-    $stmt = $db->prepare($check_sql);
-    $stmt->bind_param('isi', $user_id, $name, $column_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
+    $old_column = $result->fetch_assoc();
+    $current_name = $old_column['name'];
 
-    if ($result->num_rows > 0) {
-        Response::error('该栏位名已存在', 409);
+    // 准备更新字段
+    $updates = [];
+    $types = '';
+    $values = [];
+
+    // 更新名称（如果提供且不同）
+    if (isset($input['name'])) {
+        $name = trim($input['name']);
+
+        if (empty($name) || strlen($name) < 2) {
+            Response::error('栏位名称至少 2 个字符', 400);
+        }
+
+        if (strlen($name) > 50) {
+            Response::error('栏位名称不超过 50 个字符', 400);
+        }
+
+        // 只在名称改变时才检查唯一性
+        if ($name !== $current_name) {
+            $check_sql = "SELECT id FROM user_columns WHERE user_id = ? AND name = ?";
+            $stmt = $db->prepare($check_sql);
+            $stmt->bind_param('is', $user_id, $name);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            if ($result->num_rows > 0) {
+                Response::error('该栏位名已存在', 409);
+            }
+        }
+
+        $updates[] = "name = ?";
+        $types .= 's';
+        $values[] = $name;
     }
 
-    // 更新栏位名
-    $sql = "UPDATE user_columns SET name = ? WHERE id = ? AND user_id = ?";
+    // 更新显示顺序
+    if (isset($input['col_order'])) {
+        $col_order = intval($input['col_order']);
+        $updates[] = "col_order = ?";
+        $types .= 'i';
+        $values[] = $col_order;
+    }
+
+    // 更新启用状态
+    if (isset($input['is_enabled'])) {
+        $is_enabled = intval($input['is_enabled']);
+        $updates[] = "is_enabled = ?";
+        $types .= 'i';
+        $values[] = $is_enabled;
+    }
+
+    if (empty($updates)) {
+        Response::error('没有更新字段', 400);
+    }
+
+    // 执行更新
+    $types .= 'ii';
+    $values[] = $column_id;
+    $values[] = $user_id;
+
+    $sql = "UPDATE user_columns SET " . implode(', ', $updates) . " WHERE id = ? AND user_id = ?";
     $stmt = $db->prepare($sql);
-    $stmt->bind_param('sii', $name, $column_id, $user_id);
+
+    // 动态绑定参数
+    call_user_func_array([$stmt, 'bind_param'], array_merge([$types], $values));
 
     if ($stmt->execute()) {
-        Response::success(['id' => $column_id, 'name' => $name], '更新成功');
+        // 返回更新后的完整数据
+        $fetch_sql = "SELECT id, name, col_order, is_enabled FROM user_columns WHERE id = ? AND user_id = ?";
+        $stmt = $db->prepare($fetch_sql);
+        $stmt->bind_param('ii', $column_id, $user_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $updated_col = $result->fetch_assoc();
+
+        Response::success($updated_col, '更新成功');
     } else {
         Response::error('更新失败: ' . $db->error, 500);
     }
