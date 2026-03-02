@@ -90,10 +90,10 @@ function registerUser($db) {
 
         // 为新用户插入 4 个默认栏位
         $default_columns = [
-            ['name' => 'todo', 'order' => 0],
-            ['name' => 'inProgress', 'order' => 1],
-            ['name' => 'completed', 'order' => 2],
-            ['name' => 'suspended', 'order' => 3]
+            ['name' => '待做', 'order' => 0],
+            ['name' => '进行中', 'order' => 1],
+            ['name' => '已完成', 'order' => 2],
+            ['name' => '暂停', 'order' => 3]
         ];
 
         $col_sql = "INSERT INTO user_columns (user_id, name, col_order) VALUES (?, ?, ?)";

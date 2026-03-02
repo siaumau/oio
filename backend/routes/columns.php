@@ -200,10 +200,30 @@ function deleteColumn($user_id, $column_id, $db) {
     $db->begin_transaction();
 
     try {
-        // 将该栏位中的所有任务移到 'todo' 栏位
-        $update_sql = "UPDATE tasks SET status = 'todo' WHERE user_id = ? AND status = ?";
+        // 将该栏位中的所有任务移到 '待做' 栏位
+        // 支持简体、繁体和英文列名的向后兼容
+        $target_status = '待做';
+
+        $update_sql = "UPDATE tasks SET status = ? WHERE user_id = ? AND (status = ? OR status = ? OR status = ?)";
         $stmt = $db->prepare($update_sql);
-        $stmt->bind_param('is', $user_id, $column_name);
+
+        // 处理繁体列名映射
+        $normalized_column = $column_name;
+        if ($column_name === '進行中') {
+            $normalized_column = '进行中';
+        } elseif ($column_name === '暫停') {
+            $normalized_column = '暂停';
+        }
+
+        // 查询时同时检查简体和繁体
+        $traditional = '';
+        if ($normalized_column === '进行中') {
+            $traditional = '進行中';
+        } elseif ($normalized_column === '暂停') {
+            $traditional = '暫停';
+        }
+
+        $stmt->bind_param('sisss', $target_status, $user_id, $column_name, $normalized_column, $traditional);
         $stmt->execute();
 
         // 删除栏位

@@ -54,7 +54,7 @@ function getTasksList($user_id, $db) {
         Response::error('日期格式不正确，应为 YYYY-MM-DD', 400);
     }
 
-    $sql = "SELECT id, title, description, status, created_date, task_order, created_at, updated_at
+    $sql = "SELECT id, title, description, status, duration, created_date, task_order, created_at, updated_at
             FROM tasks
             WHERE user_id = ? AND created_date = ?
             ORDER BY task_order ASC, created_at DESC";
@@ -95,8 +95,8 @@ function createTask($user_id, $db) {
         Response::error('日期格式不正确', 400);
     }
 
-    // 获取该状态下最大的 task_order
-    $order_sql = "SELECT MAX(task_order) as max_order FROM tasks WHERE user_id = ? AND created_date = ? AND status = 'todo'";
+    // 获取该状态下最大的 task_order（支持英文和中文状态名）
+    $order_sql = "SELECT MAX(task_order) as max_order FROM tasks WHERE user_id = ? AND created_date = ? AND (status = '待做' OR status = 'todo')";
     $stmt = $db->prepare($order_sql);
     $stmt->bind_param('is', $user_id, $created_date);
     $stmt->execute();
@@ -104,7 +104,8 @@ function createTask($user_id, $db) {
     $row = $result->fetch_assoc();
     $task_order = ($row['max_order'] ?? 0) + 1;
 
-    $status = 'todo';
+    // 新建任务使用中文状态
+    $status = '待做';
     $sql = "INSERT INTO tasks (user_id, title, description, status, created_date, task_order)
             VALUES (?, ?, ?, ?, ?, ?)";
 
@@ -114,7 +115,7 @@ function createTask($user_id, $db) {
     if ($stmt->execute()) {
         $task_id = $db->insert_id;
         Response::success(
-            ['id' => $task_id, 'title' => $title, 'description' => $description, 'status' => $status, 'created_date' => $created_date],
+            ['id' => $task_id, 'title' => $title, 'description' => $description, 'status' => $status, 'duration' => 0, 'created_date' => $created_date],
             '任务创建成功',
             201
         );
@@ -137,8 +138,9 @@ function updateTask($user_id, $task_id, $db) {
     $status = $input['status'] ?? null;
     $title = $input['title'] ?? null;
     $description = $input['description'] ?? null;
+    $duration = $input['duration'] ?? null;
 
-    if (!$status && !$title && !$description) {
+    if (!$status && !$title && !$description && $duration === null) {
         Response::error('至少提供一个要更新的字段', 400);
     }
 
@@ -158,12 +160,44 @@ function updateTask($user_id, $task_id, $db) {
     $update_values = [];
 
     if ($status) {
-        $valid_statuses = ['todo', 'inProgress', 'completed', 'suspended'];
-        if (!in_array($status, $valid_statuses)) {
-            Response::error('无效的状态值', 400);
+        // 验证该状态值是否存在于用户的自定义列中
+        $verify_status_sql = "SELECT id FROM user_columns WHERE user_id = ? AND name = ?";
+        $verify_stmt = $db->prepare($verify_status_sql);
+        $verify_stmt->bind_param('is', $user_id, $status);
+        $verify_stmt->execute();
+        $verify_result = $verify_stmt->get_result();
+
+        if ($verify_result->num_rows === 0) {
+            // 如果直接查询找不到，尝试繁体/简体转换
+            $status_mapping = [
+                'todo' => '待做',
+                'inProgress' => '进行中',
+                'completed' => '已完成',
+                'suspended' => '暂停',
+                '進行中' => '进行中',
+                '暫停' => '暂停'
+            ];
+
+            $normalized_status = $status_mapping[$status] ?? null;
+
+            if ($normalized_status) {
+                // 再次验证转换后的状态
+                $verify_stmt->bind_param('is', $user_id, $normalized_status);
+                $verify_stmt->execute();
+                $verify_result = $verify_stmt->get_result();
+
+                if ($verify_result->num_rows === 0) {
+                    Response::error('该状态值不存在：' . $status, 400);
+                }
+            } else {
+                Response::error('该状态值不存在：' . $status, 400);
+            }
+        } else {
+            $normalized_status = $status;
         }
+
         $update_fields[] = "status = ?";
-        $update_values[] = $status;
+        $update_values[] = $normalized_status;
     }
 
     if ($title) {
@@ -176,14 +210,32 @@ function updateTask($user_id, $task_id, $db) {
         $update_values[] = $description;
     }
 
+    if ($duration !== null) {
+        // 确保duration是数字
+        $duration = floatval($duration);
+        if ($duration < 0) {
+            Response::error('工时不能为负数', 400);
+        }
+        $update_fields[] = "duration = ?";
+        $update_values[] = $duration;
+    }
+
     $update_values[] = $task_id;
     $update_values[] = $user_id;
 
     $sql = "UPDATE tasks SET " . implode(', ', $update_fields) . " WHERE id = ? AND user_id = ?";
     $stmt = $db->prepare($sql);
 
-    // 动态绑定参数
-    $types = str_repeat('s', count($update_fields)) . 'ii';
+    // 动态绑定参数 - 根据字段类型确定类型字符
+    $types = '';
+    foreach ($update_fields as $field) {
+        if (strpos($field, 'duration') !== false) {
+            $types .= 'd'; // double/float
+        } else {
+            $types .= 's'; // string
+        }
+    }
+    $types .= 'ii'; // task_id 和 user_id 都是整数
     $stmt->bind_param($types, ...$update_values);
 
     if ($stmt->execute()) {
