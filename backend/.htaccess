@@ -1,0 +1,10 @@
+# Apache 配置（如果使用 Apache 服务器）
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # 如果请求的文件或目录不存在，重定向到 index.php
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ index.php [QSA,L]
+</IfModule>
