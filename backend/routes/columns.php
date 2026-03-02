@@ -151,6 +151,10 @@ function updateColumn($user_id, $column_id, $db) {
     $types = '';
     $values = [];
 
+    // 用来跟踪名称是否改变（用于后续的数据迁移）
+    $name_changed = false;
+    $new_name = null;
+
     // 更新名称（如果提供且不同）
     if (isset($input['name'])) {
         $name = trim($input['name']);
@@ -174,6 +178,9 @@ function updateColumn($user_id, $column_id, $db) {
             if ($result->num_rows > 0) {
                 Response::error('该栏位名已存在', 409);
             }
+
+            $name_changed = true;
+            $new_name = $name;
         }
 
         $updates[] = "name = ?";
@@ -201,22 +208,53 @@ function updateColumn($user_id, $column_id, $db) {
         Response::error('没有更新字段', 400);
     }
 
-    // 执行更新
-    $types .= 'ii';
-    $values[] = $column_id;
-    $values[] = $user_id;
-
-    $sql = "UPDATE user_columns SET " . implode(', ', $updates) . " WHERE id = ? AND user_id = ?";
-    $stmt = $db->prepare($sql);
-
-    // 动态绑定参数（需要引用传递）
-    $bind_params = [&$types];
-    foreach ($values as &$value) {
-        $bind_params[] = &$value;
+    // 执行更新（如果欄位名稱改變，需要事務）
+    if ($name_changed) {
+        $db->begin_transaction();
     }
-    call_user_func_array([$stmt, 'bind_param'], $bind_params);
 
-    if ($stmt->execute()) {
+    try {
+        $types .= 'ii';
+        $values[] = $column_id;
+        $values[] = $user_id;
+
+        $sql = "UPDATE user_columns SET " . implode(', ', $updates) . " WHERE id = ? AND user_id = ?";
+        $stmt = $db->prepare($sql);
+
+        // 动态绑定参数（需要引用传递）
+        $bind_params = [&$types];
+        foreach ($values as &$value) {
+            $bind_params[] = &$value;
+        }
+        call_user_func_array([$stmt, 'bind_param'], $bind_params);
+
+        if (!$stmt->execute()) {
+            throw new Exception('更新欄位失敗: ' . $db->error);
+        }
+
+        // 如果欄位名稱改變，自動遷移任務狀態
+        if ($name_changed && $new_name) {
+            $migrate_sql = "UPDATE tasks SET status = ? WHERE status = ? AND user_id = ?";
+            $migrate_stmt = $db->prepare($migrate_sql);
+
+            if (!$migrate_stmt) {
+                throw new Exception('準備遷移查詢失敗: ' . $db->error);
+            }
+
+            $migrate_stmt->bind_param('sss', $new_name, $current_name, $user_id);
+
+            if (!$migrate_stmt->execute()) {
+                throw new Exception('遷移任務狀態失敗: ' . $db->error);
+            }
+
+            $migrate_stmt->close();
+        }
+
+        // 提交事務
+        if ($name_changed) {
+            $db->commit();
+        }
+
         // 返回更新后的完整数据
         $fetch_sql = "SELECT id, name, col_order, is_enabled FROM user_columns WHERE id = ? AND user_id = ?";
         $stmt = $db->prepare($fetch_sql);
@@ -226,8 +264,12 @@ function updateColumn($user_id, $column_id, $db) {
         $updated_col = $result->fetch_assoc();
 
         Response::success($updated_col, '更新成功');
-    } else {
-        Response::error('更新失败: ' . $db->error, 500);
+    } catch (Exception $e) {
+        // 如果發生錯誤，回滾事務
+        if ($name_changed) {
+            $db->rollback();
+        }
+        Response::error($e->getMessage(), 500);
     }
 }
 
