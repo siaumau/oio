@@ -88,12 +88,12 @@ function registerUser($db) {
 
         $user_id = $db->insert_id;
 
-        // 为新用户插入 4 个默认栏位
+        // 为新用户插入 4 个预设欄位
         $default_columns = [
             ['name' => '待做', 'order' => 0],
-            ['name' => '进行中', 'order' => 1],
+            ['name' => '進行中', 'order' => 1],
             ['name' => '已完成', 'order' => 2],
-            ['name' => '暂停', 'order' => 3]
+            ['name' => '暫停', 'order' => 3]
         ];
 
         $col_sql = "INSERT INTO user_columns (user_id, name, col_order) VALUES (?, ?, ?)";

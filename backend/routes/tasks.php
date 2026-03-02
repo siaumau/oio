@@ -104,7 +104,7 @@ function createTask($user_id, $db) {
     $row = $result->fetch_assoc();
     $task_order = ($row['max_order'] ?? 0) + 1;
 
-    // 新建任务使用中文状态
+    // 新建工作使用繁体中文状态
     $status = '待做';
     $sql = "INSERT INTO tasks (user_id, title, description, status, created_date, task_order)
             VALUES (?, ?, ?, ?, ?, ?)";
@@ -171,11 +171,11 @@ function updateTask($user_id, $task_id, $db) {
             // 如果直接查询找不到，尝试繁体/简体转换
             $status_mapping = [
                 'todo' => '待做',
-                'inProgress' => '进行中',
+                'inProgress' => '進行中',
                 'completed' => '已完成',
-                'suspended' => '暂停',
-                '進行中' => '进行中',
-                '暫停' => '暂停'
+                'suspended' => '暫停',
+                '进行中' => '進行中',
+                '暂停' => '暫停'
             ];
 
             $normalized_status = $status_mapping[$status] ?? null;
