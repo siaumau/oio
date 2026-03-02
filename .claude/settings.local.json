@@ -4,7 +4,10 @@
       "Bash(npm install:*)",
       "Bash(grep:*)",
       "Bash(sed:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(curl:*)",
+      "WebSearch",
+      "WebFetch(domain:app.unpkg.com)"
     ]
   }
 }

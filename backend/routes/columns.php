@@ -209,8 +209,12 @@ function updateColumn($user_id, $column_id, $db) {
     $sql = "UPDATE user_columns SET " . implode(', ', $updates) . " WHERE id = ? AND user_id = ?";
     $stmt = $db->prepare($sql);
 
-    // 动态绑定参数
-    call_user_func_array([$stmt, 'bind_param'], array_merge([$types], $values));
+    // 动态绑定参数（需要引用传递）
+    $bind_params = [&$types];
+    foreach ($values as &$value) {
+        $bind_params[] = &$value;
+    }
+    call_user_func_array([$stmt, 'bind_param'], $bind_params);
 
     if ($stmt->execute()) {
         // 返回更新后的完整数据
