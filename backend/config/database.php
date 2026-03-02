@@ -27,6 +27,9 @@ class Database {
             // 设置字符集
             $this->conn->set_charset('utf8mb4');
 
+            // 设置时区为 Asia/Taipei（台北时区 UTC+8）
+            $this->conn->query("SET time_zone = '+08:00'");
+
             return $this->conn;
         } catch (Exception $e) {
             die(json_encode([

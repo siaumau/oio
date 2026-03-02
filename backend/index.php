@@ -8,8 +8,8 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-// 设置默认时区
-date_default_timezone_set('Asia/Shanghai');
+// 设置默认时区为台北（Taiwan）
+date_default_timezone_set('Asia/Taipei');
 
 // 引入配置文件
 require_once __DIR__ . '/config/cors.php';

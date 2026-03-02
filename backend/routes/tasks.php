@@ -189,16 +189,17 @@ function createTask($user_id, $db) {
 
     // 新建工作使用繁体中文状态
     $status = '待做';
-    $sql = "INSERT INTO tasks (user_id, title, description, status, created_date, task_order)
-            VALUES (?, ?, ?, ?, ?, ?)";
+    $now = date('Y-m-d H:i:s'); // 使用 PHP 的時間（已設置為 Asia/Taipei 時區）
+    $sql = "INSERT INTO tasks (user_id, title, description, status, created_date, task_order, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
     $stmt = $db->prepare($sql);
-    $stmt->bind_param('issssi', $user_id, $title, $description, $status, $created_date, $task_order);
+    $stmt->bind_param('issssiss', $user_id, $title, $description, $status, $created_date, $task_order, $now, $now);
 
     if ($stmt->execute()) {
         $task_id = $db->insert_id;
         Response::success(
-            ['id' => $task_id, 'title' => $title, 'description' => $description, 'status' => $status, 'duration' => 0, 'created_date' => $created_date],
+            ['id' => $task_id, 'title' => $title, 'description' => $description, 'status' => $status, 'duration' => 0, 'created_date' => $created_date, 'created_at' => $now],
             '任务创建成功',
             201
         );
@@ -222,8 +223,9 @@ function updateTask($user_id, $task_id, $db) {
     $title = $input['title'] ?? null;
     $description = $input['description'] ?? null;
     $duration = $input['duration'] ?? null;
+    $date = $input['date'] ?? null;
 
-    if (!$status && !$title && !$description && $duration === null) {
+    if (!$status && !$title && !$description && $duration === null && !$date) {
         Response::error('至少提供一个要更新的字段', 400);
     }
 
@@ -307,6 +309,20 @@ function updateTask($user_id, $task_id, $db) {
         $update_values[] = $duration;
     }
 
+    if ($date) {
+        // 验证日期格式 (YYYY-MM-DD)
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            Response::error('日期格式错误，请使用 YYYY-MM-DD 格式', 400);
+        }
+        $update_fields[] = "created_date = ?";
+        $update_values[] = $date;
+    }
+
+    // 始终添加 updated_at 字段，使用 PHP 的正确时间
+    $now = date('Y-m-d H:i:s');
+    $update_fields[] = "updated_at = ?";
+    $update_values[] = $now;
+
     $update_values[] = $task_id;
     $update_values[] = $user_id;
 
@@ -318,6 +334,10 @@ function updateTask($user_id, $task_id, $db) {
     foreach ($update_fields as $field) {
         if (strpos($field, 'duration') !== false) {
             $types .= 'd'; // double/float
+        } else if (strpos($field, 'updated_at') !== false) {
+            $types .= 's'; // string (datetime format)
+        } else if (strpos($field, 'created_date') !== false) {
+            $types .= 's'; // string (date format)
         } else {
             $types .= 's'; // string
         }
