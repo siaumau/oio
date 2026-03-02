@@ -30,15 +30,20 @@ $sub_action = $path_parts[1] ?? '';
 $id = $path_parts[2] ?? '';
 
 try {
-    // 简单的路由分发
-    switch ($action) {
-        case 'api':
-            handleApi($method, $sub_action, $id, $db);
-            break;
+    // 处理上传文件的直接访问
+    if ($action === 'uploads') {
+        serveUploadedFile($path_parts);
+    } else {
+        // 简单的路由分发
+        switch ($action) {
+            case 'api':
+                handleApi($method, $sub_action, $id, $db);
+                break;
 
-        default:
-            Response::error('路由不存在', 404);
-            break;
+            default:
+                Response::error('路由不存在', 404);
+                break;
+        }
     }
 } catch (Exception $e) {
     Response::error('服务器错误: ' . $e->getMessage(), 500);
@@ -72,4 +77,52 @@ function handleApi($method, $resource, $id, $db) {
             Response::error('资源不存在', 404);
             break;
     }
+}
+
+// ========================================
+// 提供上传文件的访问
+// ========================================
+function serveUploadedFile($path_parts) {
+    // 移除 'uploads' 部分，构建文件路径
+    array_shift($path_parts);
+
+    // 清理路径以防止目录遍历攻击
+    $file_subpath = implode('/', $path_parts);
+    $file_subpath = str_replace('..', '', $file_subpath); // 移除 .. 防止目录遍历
+
+    $file_path = __DIR__ . '/uploads/' . $file_subpath;
+
+    // 确保文件存在且在上传目录内
+    if (!file_exists($file_path) || !is_file($file_path)) {
+        header('HTTP/1.1 404 Not Found');
+        exit('File not found');
+    }
+
+    // 确保文件在 uploads 目录内（防止访问其他目录）
+    $real_path = realpath($file_path);
+    $upload_dir = realpath(__DIR__ . '/uploads');
+    if ($real_path === false || strpos($real_path, $upload_dir) !== 0) {
+        header('HTTP/1.1 403 Forbidden');
+        exit('Access denied');
+    }
+
+    // 设置正确的 MIME 类型
+    $mime_types = [
+        'jpg' => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
+        'png' => 'image/png',
+        'gif' => 'image/gif',
+        'webp' => 'image/webp'
+    ];
+
+    $ext = strtolower(pathinfo($file_path, PATHINFO_EXTENSION));
+    $mime_type = $mime_types[$ext] ?? 'application/octet-stream';
+
+    header('Content-Type: ' . $mime_type);
+    header('Content-Length: ' . filesize($file_path));
+    header('Cache-Control: public, max-age=3600');
+
+    // 读取并输出文件
+    readfile($file_path);
+    exit;
 }

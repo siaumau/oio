@@ -16,13 +16,25 @@ function handleTasks($method, $id, $db) {
         case 'GET':
             if ($action === 'history') {
                 getTaskHistory($user_id, $db);
+            } elseif ($action === 'images') {
+                if (empty($id)) {
+                    Response::error('任务 ID 缺失', 400);
+                }
+                getTaskImages($user_id, $id, $db);
             } else {
                 getTasksList($user_id, $db);
             }
             break;
 
         case 'POST':
-            createTask($user_id, $db);
+            if ($action === 'addImage') {
+                if (empty($id)) {
+                    Response::error('任务 ID 缺失', 400);
+                }
+                addTaskImage($user_id, $id, $db);
+            } else {
+                createTask($user_id, $db);
+            }
             break;
 
         case 'PUT':
@@ -36,7 +48,11 @@ function handleTasks($method, $id, $db) {
             if (empty($id)) {
                 Response::error('任务 ID 缺失', 400);
             }
-            deleteTask($user_id, $id, $db);
+            if ($action === 'deleteImage') {
+                deleteTaskImage($user_id, $id, $db);
+            } else {
+                deleteTask($user_id, $id, $db);
+            }
             break;
 
         default:
@@ -350,4 +366,205 @@ function deleteTask($user_id, $task_id, $db) {
     } else {
         Response::error('删除失败: ' . $db->error, 500);
     }
+}
+
+// ========================================
+// 上傳任務照片
+// POST /api/tasks/:id?action=addImage&source=attachment|description
+// ========================================
+function addTaskImage($user_id, $task_id, $db) {
+    // 验证任务是否属于该用户
+    $verify_sql = "SELECT id FROM tasks WHERE id = ? AND user_id = ?";
+    $stmt = $db->prepare($verify_sql);
+    $stmt->bind_param('ii', $task_id, $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows === 0) {
+        Response::error('任务不存在或无权限修改', 404);
+    }
+
+    // 检查是否有文件上传
+    if (!isset($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
+        Response::error('文件上传失败或未选择文件', 400);
+    }
+
+    $file = $_FILES['image'];
+
+    // 验证文件大小（最大 5MB）
+    if ($file['size'] > 5 * 1024 * 1024) {
+        Response::error('文件大小超过 5MB 限制', 400);
+    }
+
+    // 验证文件类型
+    $allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!in_array($file['type'], $allowed_types)) {
+        Response::error('不支持的文件类型，仅支持 JPG、PNG、GIF、WebP', 400);
+    }
+
+    // 生成文件名: {task_id}_{timestamp}_{random}.{ext}
+    $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+    $timestamp = time();
+    $random = substr(str_shuffle('0123456789abcdefghijklmnopqrstuvwxyz'), 0, 8);
+    $file_name = "{$task_id}_{$timestamp}_{$random}.{$ext}";
+
+    // 确保上传目录存在
+    $upload_dir = __DIR__ . '/../uploads/tasks/';
+    if (!is_dir($upload_dir)) {
+        mkdir($upload_dir, 0755, true);
+    }
+
+    $file_path = $upload_dir . $file_name;
+
+    // 移动上传的文件
+    if (!move_uploaded_file($file['tmp_name'], $file_path)) {
+        Response::error('文件保存失败', 500);
+    }
+
+    // 保存到数据库
+    $db_file_path = 'uploads/tasks/' . $file_name;
+    $file_size = $file['size'];
+    $source = $_GET['source'] ?? 'attachment'; // 'attachment' 或 'description'
+
+    $insert_sql = "INSERT INTO task_images (task_id, user_id, file_name, file_path, file_size, source) VALUES (?, ?, ?, ?, ?, ?)";
+    $stmt = $db->prepare($insert_sql);
+    $stmt->bind_param('iisssi', $task_id, $user_id, $file_name, $db_file_path, $file_size, $source);
+
+    if ($stmt->execute()) {
+        $image_id = $db->insert_id;
+        Response::success([
+            'id' => $image_id,
+            'file_name' => $file_name,
+            'file_path' => $db_file_path,
+            'file_size' => $file_size,
+            'source' => $source
+        ], '照片上传成功', 201);
+    } else {
+        // 删除已上传的文件
+        unlink($file_path);
+        Response::error('保存到数据库失败: ' . $db->error, 500);
+    }
+}
+
+// ========================================
+// 获取任务的所有照片
+// GET /api/tasks/:id?action=images
+// ========================================
+function getTaskImages($user_id, $task_id, $db) {
+    // 验证任务是否属于该用户
+    $verify_sql = "SELECT id FROM tasks WHERE id = ? AND user_id = ?";
+    $stmt = $db->prepare($verify_sql);
+    $stmt->bind_param('ii', $task_id, $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows === 0) {
+        Response::error('任务不存在或无权限访问', 404);
+    }
+
+    // 获取该任务的所有照片
+    $sql = "SELECT id, file_name, file_path, file_size, created_at
+            FROM task_images
+            WHERE task_id = ? AND user_id = ?
+            ORDER BY created_at DESC";
+
+    $stmt = $db->prepare($sql);
+    $stmt->bind_param('ii', $task_id, $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    $images = [];
+    while ($row = $result->fetch_assoc()) {
+        $images[] = $row;
+    }
+
+    Response::success(['images' => $images], '获取成功');
+}
+
+// ========================================
+// 删除任务照片
+// DELETE /api/tasks/:id?action=deleteImage&imageId={imageId}
+// ========================================
+function deleteTaskImage($user_id, $task_id, $db) {
+    $image_id = intval($_GET['imageId'] ?? 0);
+
+    if ($image_id <= 0) {
+        Response::error('照片 ID 缺失', 400);
+    }
+
+    // 验证照片是否属于该用户，并获取信息
+    $verify_sql = "SELECT file_path, source FROM task_images WHERE id = ? AND user_id = ? AND task_id = ?";
+    $stmt = $db->prepare($verify_sql);
+    $stmt->bind_param('iii', $image_id, $user_id, $task_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows === 0) {
+        Response::error('照片不存在或无权限删除', 404);
+    }
+
+    $row = $result->fetch_assoc();
+    $file_path = $row['file_path'];
+    $source = $row['source'];
+
+    // 如果是从附件上传的，从 description 中移除该图片
+    if ($source === 'attachment') {
+        removeImageFromDescription($task_id, $file_path, $db);
+    }
+
+    // 从数据库删除记录
+    $delete_sql = "DELETE FROM task_images WHERE id = ? AND user_id = ? AND task_id = ?";
+    $stmt = $db->prepare($delete_sql);
+    $stmt->bind_param('iii', $image_id, $user_id, $task_id);
+
+    if (!$stmt->execute()) {
+        Response::error('删除失败: ' . $db->error, 500);
+    }
+
+    // 删除物理文件
+    $full_path = __DIR__ . '/../' . $file_path;
+    if (file_exists($full_path)) {
+        @unlink($full_path);
+    }
+
+    Response::success(['id' => $image_id], '照片删除成功');
+}
+
+// ========================================
+// 从工作描述中移除图片
+// ========================================
+function removeImageFromDescription($task_id, $file_path, $db) {
+    // 获取当前描述
+    $sql = "SELECT description FROM tasks WHERE id = ?";
+    $stmt = $db->prepare($sql);
+    $stmt->bind_param('i', $task_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows === 0) {
+        return;
+    }
+
+    $row = $result->fetch_assoc();
+    $description = $row['description'];
+
+    if (!$description) {
+        return;
+    }
+
+    // 构建图片 URL 的完整形式来匹配
+    $image_url = 'http://localhost:6001/' . $file_path;
+
+    // 移除包含此图片的 <img> 标签（支持各种格式）
+    $description = preg_replace(
+        '/<img[^>]*src=["\']' . preg_quote($image_url, '/') . '["\'][^>]*\/?>/i',
+        '',
+        $description
+    );
+
+    // 更新描述
+    $update_sql = "UPDATE tasks SET description = ? WHERE id = ?";
+    $update_stmt = $db->prepare($update_sql);
+    $update_stmt->bind_param('si', $description, $task_id);
+    $update_stmt->execute();
 }
