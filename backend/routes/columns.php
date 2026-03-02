@@ -5,7 +5,6 @@
 
 function handleColumns($method, $id, $db) {
     // 验证用户是否已登录
-    session_start();
     if (!isset($_SESSION['user_id'])) {
         Response::error('未授权访问，请先登录', 401);
     }

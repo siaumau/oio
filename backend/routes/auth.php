@@ -28,6 +28,13 @@ function handleAuth($method, $db) {
             verifyToken($db);
             break;
 
+        case 'changePassword':
+            if ($method !== 'POST') {
+                Response::error('仅支持 POST 请求', 405);
+            }
+            changePassword($db);
+            break;
+
         default:
             Response::error('认证接口不存在', 404);
             break;
@@ -76,6 +83,11 @@ function registerUser($db) {
     // 密码哈希
     $password_hash = password_hash($password, PASSWORD_BCRYPT);
 
+    // 確保 session 已啟動
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+
     // 开始事务
     $db->begin_transaction();
 
@@ -107,8 +119,19 @@ function registerUser($db) {
         // 提交事务
         $db->commit();
 
+        // 生成 Token 并自動登錄
+        $token = bin2hex(random_bytes(32));
+        $_SESSION['user_id'] = $user_id;
+        $_SESSION['username'] = $username;
+        $_SESSION['token'] = $token;
+
         Response::success(
-            ['user_id' => $user_id, 'username' => $username, 'email' => $email],
+            [
+                'token' => $token,
+                'user_id' => $user_id,
+                'username' => $username,
+                'email' => $email
+            ],
             '注册成功',
             201
         );
@@ -157,7 +180,12 @@ function loginUser($db) {
 
     // 生成 Token（简单实现，生产环境建议使用 JWT）
     $token = bin2hex(random_bytes(32));
-    session_start();
+
+    // 確保 session 已啟動
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+
     $_SESSION['user_id'] = $user['id'];
     $_SESSION['username'] = $user['username'];
     $_SESSION['token'] = $token;
@@ -175,20 +203,110 @@ function loginUser($db) {
 // GET /api/auth?action=verify
 // ========================================
 function verifyToken($db) {
+    // 確保 session 已啟動
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+
+    // 首先檢查 session
+    if (isset($_SESSION['user_id']) && isset($_SESSION['token'])) {
+        Response::success([
+            'user_id' => $_SESSION['user_id'],
+            'username' => $_SESSION['username']
+        ], 'Session 有效');
+        return;
+    }
+
+    // 如果沒有 session，檢查 GET 參數中的 token
     $token = $_GET['token'] ?? '';
 
     if (empty($token)) {
         Response::error('Token 缺失', 400);
     }
 
-    session_start();
-
     if (!isset($_SESSION['token']) || $_SESSION['token'] !== $token) {
-        Response::error('Token 无效或过期', 401);
+        Response::error('Token 無效或過期', 401);
     }
 
     Response::success([
         'user_id' => $_SESSION['user_id'],
         'username' => $_SESSION['username']
     ], 'Token 有效');
+}
+
+// ========================================
+// 更改密碼
+// POST /api/auth?action=changePassword
+// ========================================
+function changePassword($db) {
+    // 確保 session 已啟動
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+
+    // 檢查用戶是否已登入
+    if (!isset($_SESSION['user_id'])) {
+        Response::error('未授權訪問，請先登入', 401);
+    }
+
+    $input = json_decode(file_get_contents('php://input'), true);
+
+    if (!$input) {
+        Response::error('請求體為空', 400);
+    }
+
+    $old_password = trim($input['oldPassword'] ?? '');
+    $new_password = trim($input['newPassword'] ?? '');
+    $confirm_password = trim($input['confirmPassword'] ?? '');
+
+    // 驗證輸入
+    if (empty($old_password)) {
+        Response::error('舊密碼不能為空', 400);
+    }
+
+    if (empty($new_password) || strlen($new_password) < 6) {
+        Response::error('新密碼至少 6 個字符', 400);
+    }
+
+    if ($new_password !== $confirm_password) {
+        Response::error('新密碼和確認密碼不相符', 400);
+    }
+
+    if ($old_password === $new_password) {
+        Response::error('新密碼不能與舊密碼相同', 400);
+    }
+
+    $user_id = $_SESSION['user_id'];
+
+    // 取得用戶目前的密碼
+    $sql = "SELECT password_hash FROM users WHERE id = ?";
+    $stmt = $db->prepare($sql);
+    $stmt->bind_param('i', $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows === 0) {
+        Response::error('用戶不存在', 404);
+    }
+
+    $user = $result->fetch_assoc();
+
+    // 驗證舊密碼
+    if (!password_verify($old_password, $user['password_hash'])) {
+        Response::error('舊密碼錯誤', 401);
+    }
+
+    // 密碼雜湊
+    $password_hash = password_hash($new_password, PASSWORD_BCRYPT);
+
+    // 更新密碼
+    $update_sql = "UPDATE users SET password_hash = ? WHERE id = ?";
+    $update_stmt = $db->prepare($update_sql);
+    $update_stmt->bind_param('si', $password_hash, $user_id);
+
+    if ($update_stmt->execute()) {
+        Response::success([], '密碼更改成功');
+    } else {
+        Response::error('密碼更改失敗', 500);
+    }
 }

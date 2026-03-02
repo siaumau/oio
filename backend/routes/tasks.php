@@ -5,7 +5,6 @@
 
 function handleTasks($method, $id, $db) {
     // 验证用户是否已登录
-    session_start();
     if (!isset($_SESSION['user_id'])) {
         Response::error('未授权访问，请先登录', 401);
     }
@@ -15,7 +14,11 @@ function handleTasks($method, $id, $db) {
 
     switch ($method) {
         case 'GET':
-            getTasksList($user_id, $db);
+            if ($action === 'history') {
+                getTaskHistory($user_id, $db);
+            } else {
+                getTasksList($user_id, $db);
+            }
             break;
 
         case 'POST':
@@ -40,6 +43,70 @@ function handleTasks($method, $id, $db) {
             Response::error('不支持的请求方法', 405);
             break;
     }
+}
+
+// ========================================
+// 獲取任務狀態變化歷史記錄
+// GET /api/tasks?action=history&limit=50&offset=0
+// ========================================
+function getTaskHistory($user_id, $db) {
+    $limit = intval($_GET['limit'] ?? 50);
+    $offset = intval($_GET['offset'] ?? 0);
+    $task_id = intval($_GET['task_id'] ?? 0);
+
+    // 限制limit最大值
+    $limit = min($limit, 100);
+
+    if ($task_id > 0) {
+        // 獲取特定任務的歷史記錄
+        $sql = "SELECT id, task_id, task_title, old_status, new_status, changed_at
+                FROM task_history
+                WHERE user_id = ? AND task_id = ?
+                ORDER BY changed_at DESC
+                LIMIT ? OFFSET ?";
+        $stmt = $db->prepare($sql);
+        $stmt->bind_param('iiii', $user_id, $task_id, $limit, $offset);
+    } else {
+        // 獲取所有任務的歷史記錄
+        $sql = "SELECT id, task_id, task_title, old_status, new_status, changed_at
+                FROM task_history
+                WHERE user_id = ?
+                ORDER BY changed_at DESC
+                LIMIT ? OFFSET ?";
+        $stmt = $db->prepare($sql);
+        $stmt->bind_param('iii', $user_id, $limit, $offset);
+    }
+
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    $records = [];
+    while ($row = $result->fetch_assoc()) {
+        $records[] = $row;
+    }
+
+    // 獲取總數量用於分頁
+    if ($task_id > 0) {
+        $count_sql = "SELECT COUNT(*) as total FROM task_history WHERE user_id = ? AND task_id = ?";
+        $count_stmt = $db->prepare($count_sql);
+        $count_stmt->bind_param('ii', $user_id, $task_id);
+    } else {
+        $count_sql = "SELECT COUNT(*) as total FROM task_history WHERE user_id = ?";
+        $count_stmt = $db->prepare($count_sql);
+        $count_stmt->bind_param('i', $user_id);
+    }
+
+    $count_stmt->execute();
+    $count_result = $count_stmt->get_result();
+    $count_row = $count_result->fetch_assoc();
+    $total = intval($count_row['total']);
+
+    Response::success([
+        'records' => $records,
+        'total' => $total,
+        'limit' => $limit,
+        'offset' => $offset
+    ], '獲取成功');
 }
 
 // ========================================
@@ -144,8 +211,8 @@ function updateTask($user_id, $task_id, $db) {
         Response::error('至少提供一个要更新的字段', 400);
     }
 
-    // 验证任务是否属于该用户
-    $verify_sql = "SELECT id FROM tasks WHERE id = ? AND user_id = ?";
+    // 验证任务是否属于该用户，并获取现有信息
+    $verify_sql = "SELECT id, title, status FROM tasks WHERE id = ? AND user_id = ?";
     $stmt = $db->prepare($verify_sql);
     $stmt->bind_param('ii', $task_id, $user_id);
     $stmt->execute();
@@ -154,6 +221,10 @@ function updateTask($user_id, $task_id, $db) {
     if ($result->num_rows === 0) {
         Response::error('任务不存在或无权限修改', 404);
     }
+
+    $task_row = $result->fetch_assoc();
+    $old_status = $task_row['status'];
+    $task_title = $task_row['title'];
 
     // 构建 UPDATE 语句
     $update_fields = [];
@@ -239,6 +310,15 @@ function updateTask($user_id, $task_id, $db) {
     $stmt->bind_param($types, ...$update_values);
 
     if ($stmt->execute()) {
+        // 如果更新了状态，记录到任务历史记录表
+        if ($status && $status !== $old_status) {
+            $history_sql = "INSERT INTO task_history (user_id, task_id, task_title, old_status, new_status) VALUES (?, ?, ?, ?, ?)";
+            $history_stmt = $db->prepare($history_sql);
+            if ($history_stmt) {
+                $history_stmt->bind_param('iisss', $user_id, $task_id, $task_title, $old_status, $normalized_status);
+                $history_stmt->execute();
+            }
+        }
         Response::success(['id' => $task_id], '更新成功');
     } else {
         Response::error('更新失败: ' . $db->error, 500);

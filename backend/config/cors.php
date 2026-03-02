@@ -31,5 +31,29 @@ class CORS {
     }
 }
 
-// 立即启用 CORS
+// 設置 Session Cookie 參數（在 session_start() 前）
+if (PHP_VERSION_ID >= 70300) {
+    session_set_cookie_params([
+        'lifetime' => 86400 * 7,  // 7 天
+        'path' => '/',
+        'domain' => '',
+        'secure' => false,        // 本地開發環境設為 false
+        'httponly' => true,
+        'samesite' => 'Lax'
+    ]);
+} else {
+    // PHP < 7.3 備用方案
+    session_set_cookie_params(
+        86400 * 7,  // lifetime
+        '/',        // path
+        '',         // domain
+        false,      // secure
+        true        // httponly
+    );
+}
+
+// 立即啟用 CORS
 CORS::enableCORS();
+
+// 啟動 Session
+session_start();
