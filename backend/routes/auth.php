@@ -161,7 +161,7 @@ function loginUser($db) {
     }
 
     // 查询用户
-    $sql = "SELECT id, username, email, password_hash FROM users WHERE username = ?";
+    $sql = "SELECT id, username, email, password_hash, role FROM users WHERE username = ?";
     $stmt = $db->prepare($sql);
     $stmt->bind_param('s', $username);
     $stmt->execute();
@@ -188,13 +188,15 @@ function loginUser($db) {
 
     $_SESSION['user_id'] = $user['id'];
     $_SESSION['username'] = $user['username'];
+    $_SESSION['role'] = $user['role'];
     $_SESSION['token'] = $token;
 
     Response::success([
         'token' => $token,
         'user_id' => $user['id'],
         'username' => $user['username'],
-        'email' => $user['email']
+        'email' => $user['email'],
+        'role' => $user['role']
     ], '登录成功');
 }
 
@@ -212,7 +214,8 @@ function verifyToken($db) {
     if (isset($_SESSION['user_id']) && isset($_SESSION['token'])) {
         Response::success([
             'user_id' => $_SESSION['user_id'],
-            'username' => $_SESSION['username']
+            'username' => $_SESSION['username'],
+            'role' => $_SESSION['role'] ?? 'user'
         ], 'Session 有效');
         return;
     }

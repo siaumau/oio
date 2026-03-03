@@ -137,13 +137,30 @@ function getTasksList($user_id, $db) {
         Response::error('日期格式不正确，应为 YYYY-MM-DD', 400);
     }
 
-    $sql = "SELECT id, title, description, status, duration, created_date, task_order, created_at, updated_at
-            FROM tasks
-            WHERE user_id = ? AND created_date = ?
-            ORDER BY task_order ASC, created_at DESC";
+    // 获取当前用户的角色
+    $role = $_SESSION['role'] ?? 'user';
 
-    $stmt = $db->prepare($sql);
-    $stmt->bind_param('is', $user_id, $date);
+    if ($role === 'admin') {
+        // 管理员：获取所有用户的任务，包含 username
+        $sql = "SELECT t.id, t.title, t.description, t.status, t.duration, t.created_date, t.task_order, t.created_at, t.updated_at, t.user_id, u.username
+                FROM tasks t
+                LEFT JOIN users u ON t.user_id = u.id
+                WHERE t.created_date = ?
+                ORDER BY u.username ASC, t.task_order ASC, t.created_at DESC";
+
+        $stmt = $db->prepare($sql);
+        $stmt->bind_param('s', $date);
+    } else {
+        // 普通用户：只获取自己的任务
+        $sql = "SELECT id, title, description, status, duration, created_date, task_order, created_at, updated_at
+                FROM tasks
+                WHERE user_id = ? AND created_date = ?
+                ORDER BY task_order ASC, created_at DESC";
+
+        $stmt = $db->prepare($sql);
+        $stmt->bind_param('is', $user_id, $date);
+    }
+
     $stmt->execute();
     $result = $stmt->get_result();
 
@@ -152,7 +169,7 @@ function getTasksList($user_id, $db) {
         $tasks[] = $row;
     }
 
-    Response::success(['date' => $date, 'tasks' => $tasks], '获取成功');
+    Response::success(['date' => $date, 'tasks' => $tasks, 'isAdmin' => $role === 'admin'], '获取成功');
 }
 
 // ========================================

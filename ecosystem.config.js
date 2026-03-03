@@ -18,7 +18,7 @@ module.exports = {
       name: 'oio-backend',
       cwd: './backend',
       script: 'php',
-      args: '-S localhost:6001',
+      args: '-S 0.0.0.0:6001',
       exec_mode: 'fork',
       merge_logs: true,
       env: {
