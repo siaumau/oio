@@ -178,17 +178,25 @@ function createTask($user_id, $db) {
         Response::error('日期格式不正确', 400);
     }
 
-    // 获取该状态下最大的 task_order（支持英文和中文状态名）
-    $order_sql = "SELECT MAX(task_order) as max_order FROM tasks WHERE user_id = ? AND created_date = ? AND (status = '待做' OR status = 'todo')";
+    // 從資料庫查詢用戶的第一個（默認）欄位名稱
+    $default_col_sql = "SELECT name FROM user_columns WHERE user_id = ? ORDER BY col_order ASC LIMIT 1";
+    $default_col_stmt = $db->prepare($default_col_sql);
+    $default_col_stmt->bind_param('i', $user_id);
+    $default_col_stmt->execute();
+    $default_col_result = $default_col_stmt->get_result();
+    $default_col_row = $default_col_result->fetch_assoc();
+
+    // 如果找到默認欄位，使用它；否則回退到 '待做'
+    $status = $default_col_row['name'] ?? '待做';
+
+    // 获取该状态下最大的 task_order
+    $order_sql = "SELECT MAX(task_order) as max_order FROM tasks WHERE user_id = ? AND created_date = ? AND status = ?";
     $stmt = $db->prepare($order_sql);
-    $stmt->bind_param('is', $user_id, $created_date);
+    $stmt->bind_param('iss', $user_id, $created_date, $status);
     $stmt->execute();
     $result = $stmt->get_result();
     $row = $result->fetch_assoc();
     $task_order = ($row['max_order'] ?? 0) + 1;
-
-    // 新建工作使用繁体中文状态
-    $status = '待做';
     $now = date('Y-m-d H:i:s'); // 使用 PHP 的時間（已設置為 Asia/Taipei 時區）
     $sql = "INSERT INTO tasks (user_id, title, description, status, created_date, task_order, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
@@ -424,6 +432,18 @@ function addTaskImage($user_id, $task_id, $db) {
 
     // 生成文件名: {task_id}_{timestamp}_{random}.{ext}
     $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+
+    // 如果无法提取扩展名，根据 MIME 类型推断
+    if (empty($ext)) {
+        $mime_to_ext = [
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/gif' => 'gif',
+            'image/webp' => 'webp'
+        ];
+        $ext = $mime_to_ext[$file['type']] ?? 'jpg';
+    }
+
     $timestamp = time();
     $random = substr(str_shuffle('0123456789abcdefghijklmnopqrstuvwxyz'), 0, 8);
     $file_name = "{$task_id}_{$timestamp}_{$random}.{$ext}";
@@ -456,6 +476,7 @@ function addTaskImage($user_id, $task_id, $db) {
             'id' => $image_id,
             'file_name' => $file_name,
             'file_path' => $db_file_path,
+            'url' => 'http://localhost:6001/' . $db_file_path,
             'file_size' => $file_size,
             'source' => $source
         ], '照片上传成功', 201);
@@ -495,6 +516,7 @@ function getTaskImages($user_id, $task_id, $db) {
 
     $images = [];
     while ($row = $result->fetch_assoc()) {
+        $row['url'] = 'http://localhost:6001/' . $row['file_path'];
         $images[] = $row;
     }
 

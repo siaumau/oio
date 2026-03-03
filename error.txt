@@ -1,0 +1,318 @@
+root@mail:/www/wwwroot/bbs.open-ai.tw/oio/frontend#   pm2 logs oio-frontend
+[TAILING] Tailing last 15 lines for [oio-frontend] process (change the value with --lines option)
+/root/.pm2/logs/oio-frontend-out.log last 15 lines:
+1|oio-fron | > oio-frontend@1.0.0 dev /www/wwwroot/bbs.open-ai.tw/oio/frontend
+1|oio-fron | > vite
+1|oio-fron | 
+1|oio-fron | 
+1|oio-fron | > oio-frontend@1.0.0 dev /www/wwwroot/bbs.open-ai.tw/oio/frontend
+1|oio-fron | > vite
+1|oio-fron | 
+1|oio-fron | 
+1|oio-fron | > oio-frontend@1.0.0 dev /www/wwwroot/bbs.open-ai.tw/oio/frontend
+1|oio-fron | > vite
+1|oio-fron | 
+1|oio-fron | 
+1|oio-fron | > oio-frontend@1.0.0 dev /www/wwwroot/bbs.open-ai.tw/oio/frontend
+1|oio-fron | > vite
+1|oio-fron | 
+
+/root/.pm2/logs/oio-frontend-error.log last 15 lines:
+1|oio-fron |     at tryModuleLoad (internal/modules/cjs/loader.js:593:12)
+1|oio-fron |     at Function.Module._load (internal/modules/cjs/loader.js:585:3)
+1|oio-fron |     at Function.Module.runMain (internal/modules/cjs/loader.js:831:12)
+1|oio-fron |     at startup (internal/bootstrap/node.js:283:19)
+1|oio-fron |     at bootstrapNodeJSCore (internal/bootstrap/node.js:623:3)
+1|oio-fron | npm ERR! code ELIFECYCLE
+1|oio-fron | npm ERR! errno 1
+1|oio-fron | npm ERR! oio-frontend@1.0.0 dev: `vite`
+1|oio-fron | npm ERR! Exit status 1
+1|oio-fron | npm ERR! 
+1|oio-fron | npm ERR! Failed at the oio-frontend@1.0.0 dev script.
+1|oio-fron | npm ERR! This is probably not a problem with npm. There is likely additional logging output above.
+1|oio-fron | 
+1|oio-fron | npm ERR! A complete log of this run can be found in:
+1|oio-fron | npm ERR!     /root/.npm/_logs/2026-03-03T01_18_30_778Z-debug.log
+
+1|oio-frontend  | npm
+1|oio-frontend  |  
+1|oio-frontend  | WARN
+1|oio-frontend  |  
+1|oio-frontend  | npm
+1|oio-frontend  |  npm does not support Node.js v10.24.0
+1|oio-frontend  | npm
+1|oio-frontend  |  
+1|oio-frontend  | WARN
+1|oio-frontend  |  
+1|oio-frontend  | npm You should probably upgrade to a newer version of node as we
+1|oio-frontend  | npm WARN npm
+1|oio-frontend  |  can't make any promises that npm will work with this version.
+1|oio-frontend  | npm WARN 
+1|oio-frontend  | npm Supported releases of Node.js are the latest release of 4, 6, 7, 8, 9.
+1|oio-frontend  | npm WARN npm You can find the latest version at https://nodejs.org/
+1|oio-frontend  | > oio-frontend@1.0.0 dev /www/wwwroot/bbs.open-ai.tw/oio/frontend
+1|oio-frontend  | > vite
+1|oio-frontend  | /www/wwwroot/bbs.open-ai.tw/oio/frontend/node_modules/vite/bin/vite.js:2
+1|oio-frontend  | import { performance } from 'node:perf_hooks'
+1|oio-frontend  |        ^
+1|oio-frontend  | SyntaxError: Unexpected token {
+1|oio-frontend  |     at Module._compile (internal/modules/cjs/loader.js:723:23)
+1|oio-frontend  |     at Object.Module._extensions..js (internal/modules/cjs/loader.js:789:10)
+1|oio-frontend  |     at Module.load (internal/modules/cjs/loader.js:653:32)
+1|oio-frontend  |     at tryModuleLoad (internal/modules/cjs/loader.js:593:12)
+1|oio-frontend  |     at Function.Module._load (internal/modules/cjs/loader.js:585:3)
+1|oio-frontend  |     at Function.Module.runMain (internal/modules/cjs/loader.js:831:12)
+1|oio-frontend  |     at startup (internal/bootstrap/node.js:283:19)
+1|oio-frontend  |     at bootstrapNodeJSCore (internal/bootstrap/node.js:623:3)
+1|oio-frontend  | npm 
+1|oio-frontend  | ERR! code ELIFECYCLE
+1|oio-frontend  | npm ERR! errno 1
+1|oio-frontend  | npm
+1|oio-frontend  |  ERR! oio-frontend@1.0.0 dev: `vite`
+1|oio-frontend  | npm ERR! Exit status 1
+1|oio-frontend  | npm ERR! 
+1|oio-frontend  | npm ERR! Failed at the oio-frontend@1.0.0 dev script.
+1|oio-frontend  | npm ERR!
+1|oio-frontend  |  This is probably not a problem with npm. There is likely additional logging output above.
+1|oio-frontend  | npm ERR! A complete log of this run can be found in:
+1|oio-frontend  | npm ERR!     /root/.npm/_logs/2026-03-03T01_18_32_964Z-debug.log
+1|oio-frontend  | npm
+1|oio-frontend  |  
+1|oio-frontend  | WARN
+1|oio-frontend  |  
+1|oio-frontend  | npm
+1|oio-frontend  |  npm does not support Node.js v10.24.0
+1|oio-frontend  | npm
+1|oio-frontend  |  
+1|oio-frontend  | WARN
+1|oio-frontend  |  
+1|oio-frontend  | npm
+1|oio-frontend  |  You should probably upgrade to a newer version of node as we
+1|oio-frontend  | npm
+1|oio-frontend  |  
+1|oio-frontend  | WARN
+1|oio-frontend  |  
+1|oio-frontend  | npm
+1|oio-frontend  |  can't make any promises that npm will work with this version.
+1|oio-frontend  | npm WARN npm Supported releases of Node.js are the latest release of 4, 6, 7, 8, 9.
+1|oio-frontend  | npm WARN npm You can find the latest version at https://nodejs.org/
+1|oio-frontend  | > oio-frontend@1.0.0 dev /www/wwwroot/bbs.open-ai.tw/oio/frontend
+1|oio-frontend  | > vite
+1|oio-frontend  | /www/wwwroot/bbs.open-ai.tw/oio/frontend/node_modules/vite/bin/vite.js:2
+1|oio-frontend  | import { performance } from 'node:perf_hooks'
+1|oio-frontend  |        ^
+1|oio-frontend  | SyntaxError: Unexpected token {
+1|oio-frontend  |     at Module._compile (internal/modules/cjs/loader.js:723:23)
+1|oio-frontend  |     at Object.Module._extensions..js (internal/modules/cjs/loader.js:789:10)
+1|oio-frontend  |     at Module.load (internal/modules/cjs/loader.js:653:32)
+1|oio-frontend  |     at tryModuleLoad (internal/modules/cjs/loader.js:593:12)
+1|oio-frontend  |     at Function.Module._load (internal/modules/cjs/loader.js:585:3)
+1|oio-frontend  |     at Function.Module.runMain (internal/modules/cjs/loader.js:831:12)
+1|oio-frontend  |     at startup (internal/bootstrap/node.js:283:19)
+1|oio-frontend  |     at bootstrapNodeJSCore (internal/bootstrap/node.js:623:3)
+1|oio-frontend  | npm
+1|oio-frontend  |  
+1|oio-frontend  | ERR!
+1|oio-frontend  |  
+1|oio-frontend  | code
+1|oio-frontend  |  ELIFECYCLE
+1|oio-frontend  | npm
+1|oio-frontend  |  
+1|oio-frontend  | ERR!
+1|oio-frontend  |  
+1|oio-frontend  | errno
+1|oio-frontend  |  1
+1|oio-frontend  | npm
+1|oio-frontend  |  
+1|oio-frontend  | ERR!
+1|oio-frontend  |  oio-frontend@1.0.0 dev: `vite`
+1|oio-frontend  | npm
+1|oio-frontend  |  
+1|oio-frontend  | ERR!
+1|oio-frontend  |  Exit status 1
+1|oio-frontend  | npm
+1|oio-frontend  |  
+1|oio-frontend  | ERR!
+1|oio-frontend  |  
+1|oio-frontend  | npm
+1|oio-frontend  |  
+1|oio-frontend  | ERR!
+1|oio-frontend  |  Failed at the oio-frontend@1.0.0 dev script.
+1|oio-frontend  | npm
+1|oio-frontend  |  
+1|oio-frontend  | ERR!
+1|oio-frontend  |  This is probably not a problem with npm. There is likely additional logging output above.
+1|oio-frontend  | npm
+1|oio-frontend  |  
+1|oio-frontend  | ERR!
+1|oio-frontend  |  A complete log of this run can be found in:
+1|oio-frontend  | npm
+1|oio-frontend  |  
+1|oio-frontend  | ERR!
+1|oio-frontend  |      /root/.npm/_logs/2026-03-03T01_18_35_096Z-debug.log
+1|oio-frontend  | npm
+1|oio-frontend  |  WARN npm npm does not support Node.js v10.24.0
+1|oio-frontend  | npm WARN npm You should probably upgrade to a newer version of node as we
+1|oio-frontend  | npm WARN npm can't make any promises that npm will work with this version.
+1|oio-frontend  | npm WARN npm Supported releases of Node.js are the latest release of 4, 6, 7, 8, 9.
+1|oio-frontend  | npm WARN npm You can find the latest version at https://nodejs.org/
+1|oio-frontend  | > oio-frontend@1.0.0 dev /www/wwwroot/bbs.open-ai.tw/oio/frontend
+1|oio-frontend  | > vite
+1|oio-frontend  | /www/wwwroot/bbs.open-ai.tw/oio/frontend/node_modules/vite/bin/vite.js:2
+1|oio-frontend  | import { performance } from 'node:perf_hooks'
+1|oio-frontend  |        ^
+1|oio-frontend  | SyntaxError: Unexpected token {
+1|oio-frontend  |     at Module._compile (internal/modules/cjs/loader.js:723:23)
+1|oio-frontend  |     at Object.Module._extensions..js (internal/modules/cjs/loader.js:789:10)
+1|oio-frontend  |     at Module.load (internal/modules/cjs/loader.js:653:32)
+1|oio-frontend  |     at tryModuleLoad (internal/modules/cjs/loader.js:593:12)
+1|oio-frontend  |     at Function.Module._load (internal/modules/cjs/loader.js:585:3)
+1|oio-frontend  |     at Function.Module.runMain (internal/modules/cjs/loader.js:831:12)
+1|oio-frontend  |     at startup (internal/bootstrap/node.js:283:19)
+1|oio-frontend  |     at bootstrapNodeJSCore (internal/bootstrap/node.js:623:3)
+1|oio-frontend  | npm
+1|oio-frontend  |  
+1|oio-frontend  | ERR!
+1|oio-frontend  |  
+1|oio-frontend  | code
+1|oio-frontend  |  ELIFECYCLE
+1|oio-frontend  | npm
+1|oio-frontend  |  
+1|oio-frontend  | ERR!
+1|oio-frontend  |  
+1|oio-frontend  | errno
+1|oio-frontend  |  1
+1|oio-frontend  | npm
+1|oio-frontend  |  
+1|oio-frontend  | ERR!
+1|oio-frontend  |  oio-frontend@1.0.0 dev: `vite`
+1|oio-frontend  | npm
+1|oio-frontend  |  
+1|oio-frontend  | ERR!
+1|oio-frontend  |  Exit status 1
+1|oio-frontend  | npm
+1|oio-frontend  |  
+1|oio-frontend  | ERR!
+1|oio-frontend  |  
+1|oio-frontend  | npm ERR! Failed at the oio-frontend@1.0.0 dev script.
+1|oio-frontend  | npm ERR! This is probably not a problem with npm. There is likely additional logging output above.
+1|oio-frontend  | npm
+1|oio-frontend  |  
+1|oio-frontend  | ERR!
+1|oio-frontend  |  A complete log of this run can be found in:
+1|oio-frontend  | npm
+1|oio-frontend  |  ERR!     /root/.npm/_logs/2026-03-03T01_18_37_073Z-debug.log
+1|oio-frontend  | npm
+1|oio-frontend  |  
+1|oio-frontend  | WARN 
+1|oio-frontend  | npm npm does not support Node.js v10.24.0
+1|oio-frontend  | npm WARN
+1|oio-frontend  |  npm You should probably upgrade to a newer version of node as we
+1|oio-frontend  | npm WARN 
+1|oio-frontend  | npm can't make any promises that npm will work with this version.
+1|oio-frontend  | npm WARN npm
+1|oio-frontend  |  Supported releases of Node.js are the latest release of 4, 6, 7, 8, 9.
+1|oio-frontend  | npm WARN npm You can find the latest version at https://nodejs.org/
+1|oio-frontend  | > oio-frontend@1.0.0 dev /www/wwwroot/bbs.open-ai.tw/oio/frontend
+1|oio-frontend  | > vite
+1|oio-frontend  | /www/wwwroot/bbs.open-ai.tw/oio/frontend/node_modules/vite/bin/vite.js:2
+1|oio-frontend  | import { performance } from 'node:perf_hooks'
+1|oio-frontend  |        ^
+1|oio-frontend  | SyntaxError: Unexpected token {
+1|oio-frontend  |     at Module._compile (internal/modules/cjs/loader.js:723:23)
+1|oio-frontend  |     at Object.Module._extensions..js (internal/modules/cjs/loader.js:789:10)
+1|oio-frontend  |     at Module.load (internal/modules/cjs/loader.js:653:32)
+1|oio-frontend  |     at tryModuleLoad (internal/modules/cjs/loader.js:593:12)
+1|oio-frontend  |     at Function.Module._load (internal/modules/cjs/loader.js:585:3)
+1|oio-frontend  |     at Function.Module.runMain (internal/modules/cjs/loader.js:831:12)
+1|oio-frontend  |     at startup (internal/bootstrap/node.js:283:19)
+1|oio-frontend  |     at bootstrapNodeJSCore (internal/bootstrap/node.js:623:3)
+1|oio-frontend  | npm
+1|oio-frontend  |  
+1|oio-frontend  | ERR!
+1|oio-frontend  |  
+1|oio-frontend  | code
+1|oio-frontend  |  ELIFECYCLE
+1|oio-frontend  | npm
+1|oio-frontend  |  ERR! errno 1
+1|oio-frontend  | npm
+1|oio-frontend  |  ERR! oio-frontend@1.0.0 dev: `vite`
+1|oio-frontend  | npm ERR! Exit status 1
+1|oio-frontend  | npm ERR!
+1|oio-frontend  |  
+1|oio-frontend  | npm ERR! Failed at the oio-frontend@1.0.0 dev script.
+1|oio-frontend  | npm ERR! This is probably not a problem with npm. There is likely additional logging output above.
+1|oio-frontend  | npm ERR! A complete log of this run can be found in:
+1|oio-frontend  | npm ERR!     /root/.npm/_logs/2026-03-03T01_18_39_045Z-debug.log
+1|oio-frontend  | npm
+1|oio-frontend  |  WARN 
+1|oio-frontend  | npm npm does not support Node.js v10.24.0
+1|oio-frontend  | npm WARN 
+1|oio-frontend  | npm You should probably upgrade to a newer version of node as we
+1|oio-frontend  | npm WARN npm
+1|oio-frontend  |  can't make any promises that npm will work with this version.
+1|oio-frontend  | npm 
+1|oio-frontend  | WARN npm Supported releases of Node.js are the latest release of 4, 6, 7, 8, 9.
+1|oio-frontend  | npm WARN 
+1|oio-frontend  | npm You can find the latest version at https://nodejs.org/
+1|oio-frontend  | > oio-frontend@1.0.0 dev /www/wwwroot/bbs.open-ai.tw/oio/frontend
+1|oio-frontend  | > vite
+1|oio-frontend  | /www/wwwroot/bbs.open-ai.tw/oio/frontend/node_modules/vite/bin/vite.js:2
+1|oio-frontend  | import { performance } from 'node:perf_hooks'
+1|oio-frontend  |        ^
+1|oio-frontend  | SyntaxError: Unexpected token {
+1|oio-frontend  |     at Module._compile (internal/modules/cjs/loader.js:723:23)
+1|oio-frontend  |     at Object.Module._extensions..js (internal/modules/cjs/loader.js:789:10)
+1|oio-frontend  |     at Module.load (internal/modules/cjs/loader.js:653:32)
+1|oio-frontend  |     at tryModuleLoad (internal/modules/cjs/loader.js:593:12)
+1|oio-frontend  |     at Function.Module._load (internal/modules/cjs/loader.js:585:3)
+1|oio-frontend  |     at Function.Module.runMain (internal/modules/cjs/loader.js:831:12)
+1|oio-frontend  |     at startup (internal/bootstrap/node.js:283:19)
+1|oio-frontend  |     at bootstrapNodeJSCore (internal/bootstrap/node.js:623:3)
+1|oio-frontend  | npm
+1|oio-frontend  |  
+1|oio-frontend  | ERR!
+1|oio-frontend  |  
+1|oio-frontend  | code ELIFECYCLE
+1|oio-frontend  | npm
+1|oio-frontend  |  ERR! errno 1
+1|oio-frontend  | npm ERR! oio-frontend@1.0.0 dev: `vite`
+1|oio-frontend  | npm ERR! Exit status 1
+1|oio-frontend  | npm ERR! 
+1|oio-frontend  | npm ERR! Failed at the oio-frontend@1.0.0 dev script.
+1|oio-frontend  | npm ERR! This is probably not a problem with npm. There is likely additional logging output above.
+1|oio-frontend  | npm ERR! A complete log of this run can be found in:
+1|oio-frontend  | npm ERR!     /root/.npm/_logs/2026-03-03T01_18_41_046Z-debug.log
+1|oio-frontend  | npm
+1|oio-frontend  |  WARN npm npm does not support Node.js v10.24.0
+1|oio-frontend  | npm WARN npm You should probably upgrade to a newer version of node as we
+1|oio-frontend  | npm WARN npm can't make any promises that npm will work with this version.
+1|oio-frontend  | npm WARN npm Supported releases of Node.js are the latest release of 4, 6, 7, 8, 9.
+1|oio-frontend  | npm WARN npm You can find the latest version at https://nodejs.org/
+1|oio-frontend  | > oio-frontend@1.0.0 dev /www/wwwroot/bbs.open-ai.tw/oio/frontend
+1|oio-frontend  | > vite
+1|oio-frontend  | /www/wwwroot/bbs.open-ai.tw/oio/frontend/node_modules/vite/bin/vite.js:2
+1|oio-frontend  | import { performance } from 'node:perf_hooks'
+1|oio-frontend  |        ^
+1|oio-frontend  | SyntaxError: Unexpected token {
+1|oio-frontend  |     at Module._compile (internal/modules/cjs/loader.js:723:23)
+1|oio-frontend  |     at Object.Module._extensions..js (internal/modules/cjs/loader.js:789:10)
+1|oio-frontend  |     at Module.load (internal/modules/cjs/loader.js:653:32)
+1|oio-frontend  |     at tryModuleLoad (internal/modules/cjs/loader.js:593:12)
+1|oio-frontend  |     at Function.Module._load (internal/modules/cjs/loader.js:585:3)
+1|oio-frontend  |     at Function.Module.runMain (internal/modules/cjs/loader.js:831:12)
+1|oio-frontend  |     at startup (internal/bootstrap/node.js:283:19)
+1|oio-frontend  |     at bootstrapNodeJSCore (internal/bootstrap/node.js:623:3)
+1|oio-frontend  | npm ERR! code ELIFECYCLE
+1|oio-frontend  | npm ERR! errno 1
+1|oio-frontend  | npm 
+1|oio-frontend  | ERR! oio-frontend@1.0.0 dev: `vite`
+1|oio-frontend  | npm ERR! Exit status 1
+1|oio-frontend  | npm ERR! 
+1|oio-frontend  | npm ERR! Failed at the oio-frontend@1.0.0 dev script.
+1|oio-frontend  | npm ERR! This is probably not a problem with npm. There is likely additional logging output above.
+1|oio-frontend  | npm
+1|oio-frontend  |  
+1|oio-frontend  | ERR! A complete log of this run can be found in:
+1|oio-frontend  | npm ERR!
+1|oio-frontend  |      /root/.npm/_logs/2026-03-03T01_18_43_083Z-debug.log
