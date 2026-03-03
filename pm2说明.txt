@@ -1,0 +1,187 @@
+========================================
+OIO 應用 PM2 管理指南
+========================================
+
+📋 目錄
+1. 前置要求
+2. 快速啟動
+3. 常用命令
+4. 日誌查看
+5. 調試方法
+6. 常見問題
+
+========================================
+1. 前置要求
+========================================
+
+✓ Node.js 已安裝
+✓ npm 已安裝
+✓ PHP 命令行可用
+✓ ecosystem.config.js 配置文件存在
+
+全局安裝 PM2：
+  npm install -g pm2
+
+
+========================================
+2. 快速啟動（Linux 服務器）
+========================================
+
+進入項目目錄：
+  cd /www/wwwroot/bbs.open-ai.tw/oio
+
+啟動所有應用（前端 + 後端）：
+  pm2 start ecosystem.config.js
+
+驗證運行狀態：
+  pm2 status
+
+
+========================================
+3. 常用命令
+========================================
+
+📍 查看應用狀態
+  pm2 list              # 列出所有應用
+  pm2 status            # 詳細狀態
+
+📍 啟動/停止/重啟
+  pm2 start ecosystem.config.js    # 啟動所有應用
+  pm2 restart all                  # 重啟所有應用
+  pm2 restart oio-frontend         # 重啟前端
+  pm2 restart oio-backend          # 重啟後端
+  pm2 stop all                      # 停止所有應用
+  pm2 delete all                    # 刪除所有應用
+
+📍 應用管理
+  pm2 delete oio-frontend          # 刪除前端應用
+  pm2 delete oio-backend           # 刪除後端應用
+
+📍 監控
+  pm2 monit                        # 終端實時監控（按 q 退出）
+  pm2 status                       # 簡單狀態查看
+
+
+========================================
+4. 日誌查看
+========================================
+
+查看所有日誌：
+  pm2 logs
+
+查看前端日誌（最後 20 行）：
+  pm2 logs oio-frontend --lines 20
+
+查看後端日誌（最後 20 行）：
+  pm2 logs oio-backend --lines 20
+
+即時查看前端日誌：
+  pm2 logs oio-frontend
+
+日誌位置：
+  /root/.pm2/logs/oio-frontend-out.log   (標準輸出)
+  /root/.pm2/logs/oio-frontend-err.log   (錯誤輸出)
+  /root/.pm2/logs/oio-backend-out.log    (標準輸出)
+  /root/.pm2/logs/oio-backend-err.log    (錯誤輸出)
+
+
+========================================
+5. 調試方法
+========================================
+
+問題：應用無法啟動
+  → 查看日誌：pm2 logs oio-frontend
+  → 檢查端口占用：lsof -i :5174 (前端) 或 lsof -i :6001 (後端)
+  → 檢查文件權限：ls -la frontend/ backend/
+
+問題：前端仍在 5173 而非 5174
+  → 清除快取並重新安裝：
+    cd frontend
+    rm -rf node_modules package-lock.json
+    npm cache clean --force
+    npm install
+  → 重新啟動：pm2 restart oio-frontend
+
+問題：xdg-open 錯誤
+  → 這是 Vite 試圖自動打開瀏覽器的錯誤
+  → 不影響應用運行
+  → 確保 vite.config.js 中 open: false
+
+問題：後端 PHP 錯誤
+  → 檢查 CORS 配置：backend/config/cors.php
+  → 檢查數據庫連接：backend/config/database.php
+  → 查看詳細錯誤：pm2 logs oio-backend
+
+
+========================================
+6. 常見問題
+========================================
+
+Q: 怎樣關閉 Vite 自動打開瀏覽器的行為？
+A: 編輯 frontend/vite.config.js，設置 open: false
+
+Q: 如何在開機時自動啟動 PM2 應用？
+A: 執行以下命令：
+   pm2 startup
+   pm2 save
+
+Q: 如何完全移除 PM2 的自啟動？
+A: pm2 unstartup
+
+Q: 怎樣修改應用的環境變量？
+A: 編輯 ecosystem.config.js 中的 env 部分，然後重啟應用
+
+Q: 前端訪問地址是什麼？
+A: http://你的域名:5174 (或 http://IP:5173 如果還在 5173)
+
+Q: 後端 API 地址是什麼？
+A: http://localhost:6001 (服務器內) 或設置在 frontend/src/config/apiConfig.js
+
+Q: 如何查看 PM2 的詳細信息？
+A: pm2 info oio-frontend (或 oio-backend)
+
+
+========================================
+7. 配置文件位置
+========================================
+
+ecosystem.config.js  # PM2 配置文件（項目根目錄）
+frontend/vite.config.js  # Vite 前端配置
+frontend/src/config/apiConfig.js  # API 地址配置
+backend/config/cors.php  # CORS 跨域配置
+backend/config/database.php  # 數據庫配置
+
+
+========================================
+8. 應用信息
+========================================
+
+前端應用 (oio-frontend)
+  - 命令: npm run dev
+  - 工作目錄: ./frontend
+  - 端口: 5174
+  - 訪問: http://domain:5174
+
+後端應用 (oio-backend)
+  - 命令: php -S localhost:6001
+  - 工作目錄: ./backend
+  - 端口: 6001
+  - API: http://localhost:6001/api/
+
+
+========================================
+9. 快速命令速查表
+========================================
+
+啟動所有            pm2 start ecosystem.config.js
+查看狀態            pm2 status
+實時監控            pm2 monit
+查看日誌            pm2 logs oio-frontend
+重啟應用            pm2 restart all
+停止應用            pm2 stop all
+刪除應用            pm2 delete all
+查看應用信息        pm2 info oio-frontend
+
+========================================
+更新時間：2026-03-03
+========================================

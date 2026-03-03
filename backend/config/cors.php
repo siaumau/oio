@@ -9,7 +9,8 @@ class CORS {
         $allowed_origins = [
             'http://localhost:6000',
             'http://127.0.0.1:6000',
-            'http://localhost:5173',  // Vite 开发服务器备选
+            'http://localhost:5173',  // Vite 开发服务器
+            'http://localhost:5174',  // Vite 开发服务器（当前）
         ];
 
         $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
