@@ -5,20 +5,28 @@
 
 class CORS {
     public static function enableCORS() {
-        // 允许的来源
+        // 允许的来源（本地开发环境）
         $allowed_origins = [
-            'http://localhost:6000',
-            'http://127.0.0.1:6000',
-            'http://localhost:5173',  // Vite 开发服务器
-            'http://localhost:5174',  // Vite 开发服务器（当前）
+            'http://localhost:5173',
+            'http://localhost:5174',
+            'http://127.0.0.1:5173',
+            'http://127.0.0.1:5174',
+            'http://192.168.0.167:5173',
+            'http://192.168.0.167:5174',
         ];
 
         $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 
+        // 检查 origin 是否在允许列表中
         if (in_array($origin, $allowed_origins)) {
+            // 必须返回具体的 origin，不能用 *（因为前端用了 credentials: 'include'）
             header('Access-Control-Allow-Origin: ' . $origin);
+        } else {
+            // 默认允许 localhost（开发环境方便）
+            header('Access-Control-Allow-Origin: http://localhost:5173');
         }
 
+        // 当使用 credentials 时，必须明确设置为 true
         header('Access-Control-Allow-Credentials: true');
         header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
         header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
