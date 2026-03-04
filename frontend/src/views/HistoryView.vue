@@ -115,6 +115,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useUserStore } from '../stores/userStore.js'
+import apiConfig from '../config/apiConfig.js'
 
 const userStore = useUserStore()
 
@@ -150,7 +151,7 @@ async function loadHistory() {
   try {
     const offset = (currentPage.value - 1) * pageSize
     const response = await fetch(
-      `http://localhost:6001/api/tasks?action=history&limit=${pageSize}&offset=${offset}`,
+      `${apiConfig.API_BASE_URL}/api/tasks?action=history&limit=${pageSize}&offset=${offset}`,
       {
         method: 'GET',
         credentials: 'include',

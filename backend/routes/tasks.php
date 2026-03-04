@@ -3,6 +3,9 @@
 // 任务管理路由
 // ========================================
 
+// 引入 API 配置
+require_once __DIR__ . '/../config/apiConfig.php';
+
 function handleTasks($method, $id, $db) {
     // 验证用户是否已登录
     if (!isset($_SESSION['user_id'])) {
@@ -493,7 +496,7 @@ function addTaskImage($user_id, $task_id, $db) {
             'id' => $image_id,
             'file_name' => $file_name,
             'file_path' => $db_file_path,
-            'url' => 'http://localhost:6001/' . $db_file_path,
+            'url' => API_BASE_URL . '/' . $db_file_path,
             'file_size' => $file_size,
             'source' => $source
         ], '照片上传成功', 201);
@@ -533,7 +536,7 @@ function getTaskImages($user_id, $task_id, $db) {
 
     $images = [];
     while ($row = $result->fetch_assoc()) {
-        $row['url'] = 'http://localhost:6001/' . $row['file_path'];
+        $row['url'] = API_BASE_URL . '/' . $row['file_path'];
         $images[] = $row;
     }
 
@@ -612,7 +615,7 @@ function removeImageFromDescription($task_id, $file_path, $db) {
     }
 
     // 构建图片 URL 的完整形式来匹配
-    $image_url = 'http://localhost:6001/' . $file_path;
+    $image_url = API_BASE_URL . '/' . $file_path;
 
     // 移除包含此图片的 <img> 标签（支持各种格式）
     $description = preg_replace(

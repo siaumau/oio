@@ -522,6 +522,7 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { useUserStore } from '../stores/userStore.js'
 import { useTaskStore } from '../stores/taskStore.js'
 import RichTextEditor from '../components/RichTextEditor.vue'
+import apiConfig from '../config/apiConfig.js'
 
 const userStore = useUserStore()
 const taskStore = useTaskStore()
@@ -779,7 +780,7 @@ const uploadNewTaskImages = async (taskId) => {
 
     try {
       const response = await fetch(
-        `http://localhost:6001/api/tasks/${taskId}?action=addImage`,
+        `${apiConfig.API_BASE_URL}/api/tasks/${taskId}?action=addImage`,
         {
           method: 'POST',
           credentials: 'include',
@@ -948,7 +949,7 @@ const uploadImages = async (taskId) => {
 
     try {
       const response = await fetch(
-        `http://localhost:6001/api/tasks/${taskId}?action=addImage`,
+        `${apiConfig.API_BASE_URL}/api/tasks/${taskId}?action=addImage`,
         {
           method: 'POST',
           credentials: 'include',
@@ -1011,7 +1012,7 @@ const processBase64Images = async (taskId, description) => {
       formData.append('image', blob)
 
       const uploadResponse = await fetch(
-        `http://localhost:6001/api/tasks/${taskId}?action=addImage&source=description`,
+        `${apiConfig.API_BASE_URL}/api/tasks/${taskId}?action=addImage&source=description`,
         {
           method: 'POST',
           credentials: 'include',

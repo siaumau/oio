@@ -97,6 +97,7 @@ import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
 import { ref, watch, nextTick } from 'vue'
+import apiConfig from '../config/apiConfig.js'
 
 const props = defineProps({
   modelValue: {
@@ -290,7 +291,7 @@ const insertImage = async (file) => {
     formData.append('image', file)
 
     const response = await fetch(
-      `http://localhost:6001/api/tasks/${props.taskId}?action=addImage&source=description`,
+      `${apiConfig.API_BASE_URL}/api/tasks/${props.taskId}?action=addImage&source=description`,
       {
         method: 'POST',
         credentials: 'include',
@@ -301,7 +302,7 @@ const insertImage = async (file) => {
     const data = await response.json()
 
     if (data.success) {
-      const imageUrl = `http://localhost:6001/${data.data.file_path}`
+      const imageUrl = `${apiConfig.API_BASE_URL}/${data.data.file_path}`
       editor.value.chain().focus().setImage({ src: imageUrl }).run()
     } else {
       alert('圖片上傳失敗：' + data.message)
