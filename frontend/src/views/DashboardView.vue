@@ -1296,15 +1296,27 @@ const exportWeekReport = () => {
     statusMap[s] = (statusMap[s] || 0) + 1
   }
 
+  // ===== 輔助函數：移除 HTML 標籤 =====
+  const stripHtmlTags = (html) => {
+    if (!html) return ''
+    return html
+      .replace(/<[^>]*>/g, '')           // 移除 HTML 標籤
+      .replace(/&nbsp;/g, ' ')           // &nbsp; → 空格
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&')
+      .trim()
+  }
+
   // 4. 建構 TXT 內容
   const lines = []
   lines.push(`OIO 當周任務報告`)
   lines.push(`${weekRangeDisplay.value} ${weekRangeWeekdays.value}`)
   lines.push(`匯出時間: ${new Date().toLocaleString('zh-TW')}`)
-  lines.push(`${'='.repeat(40)}`)
+  lines.push(`${'='.repeat(60)}`)
   lines.push('')
   lines.push('【按狀態統計】')
-  lines.push('-'.repeat(20))
+  lines.push('-'.repeat(30))
   const total = allTasks.length
   for (const [status, count] of Object.entries(statusMap)) {
     lines.push(`  ${status}: ${count} 個任務`)
@@ -1312,20 +1324,68 @@ const exportWeekReport = () => {
   lines.push(`  合計: ${total} 個任務`)
   lines.push('')
   lines.push('【詳細任務列表】')
-  lines.push('-'.repeat(20))
+  lines.push('='.repeat(60))
+
+  // 按日期分組展示詳細任務
   for (const day of weekDaysList) {
     const tasks = tasksCache.value[day.dateStr] || []
     if (tasks.length === 0) continue
+
     lines.push(``)
-    lines.push(`[${day.displayDate} (${day.label})]`)
-    for (const t of tasks) {
+    lines.push(`📅 ${day.displayDate} (${day.label}) - ${tasks.length} 項工作`)
+    lines.push('-'.repeat(60))
+
+    for (let index = 0; index < tasks.length; index++) {
+      const t = tasks[index]
       const icon = isTaskCompleted(t) ? '✅' : '○'
-      const duration = t.duration ? ` (⏱️ ${t.duration}h)` : ''
-      lines.push(`  ${icon} [${t.status}] ${t.title}${duration}`)
+
+      // 任務標題和基本信息
+      lines.push(``)
+      lines.push(`${index + 1}. ${icon} [${t.status}] ${t.title}`)
+
+      // 工時信息
+      if (t.duration && t.duration > 0) {
+        lines.push(`   ⏱️  工時: ${t.duration} 小時`)
+      }
+
+      // 描述信息
+      if (t.description) {
+        const cleanDescription = stripHtmlTags(t.description)
+        if (cleanDescription) {
+          lines.push(``)
+          lines.push(`   📝 描述:`)
+          // 將描述按 60 字符換行
+          const descLines = cleanDescription.split('\n')
+          for (const line of descLines) {
+            if (line.length > 56) {
+              // 長行進行換行
+              for (let i = 0; i < line.length; i += 56) {
+                lines.push(`      ${line.substring(i, i + 56)}`)
+              }
+            } else {
+              lines.push(`      ${line}`)
+            }
+          }
+        }
+      }
+
+      // 圖片信息
+      if (t.image_url) {
+        lines.push(`   🖼️  圖片: ${t.image_url}`)
+      }
+
+      // 時間戳
+      if (t.created_at) {
+        const createTime = new Date(t.created_at).toLocaleString('zh-TW')
+        lines.push(`   🕐 創建時間: ${createTime}`)
+      }
     }
   }
-  lines.push('')
-  lines.push(`${'='.repeat(40)}`)
+
+  lines.push(``)
+  lines.push(`${'='.repeat(60)}`)
+  lines.push(`報告生成工具: OIO Kanban 工作記錄系統`)
+  lines.push(`${'='.repeat(60)}`)
 
   // 5. 觸發下載
   const content = lines.join('\n')
