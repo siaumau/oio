@@ -87,6 +87,7 @@
             <span class="date-display">{{ weekRangeDisplay }} <span class="weekday-info">{{ weekRangeWeekdays }}</span></span>
             <button class="btn btn-secondary" @click="goToThisWeek">本周</button>
             <button class="btn btn-secondary" @click="goToNextWeek">下一周 →</button>
+            <button class="btn btn-secondary" @click="exportWeekReport">📥 匯出本周</button>
           </template>
 
           <!-- 月视图导航 -->
@@ -1258,6 +1259,83 @@ const goToNextWeek = async () => {
 const goToThisWeek = async () => {
   currentWeekStart.value = new Date()
   await loadWeekData()
+}
+
+const exportWeekReport = () => {
+  // 1. 取得當周所有日期
+  const startOfWeek = new Date(currentWeekStart.value)
+  startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay())
+
+  const weekDaysList = []
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(startOfWeek)
+    date.setDate(startOfWeek.getDate() + i)
+    const y = date.getFullYear()
+    const m = String(date.getMonth() + 1).padStart(2, '0')
+    const d = String(date.getDate()).padStart(2, '0')
+    weekDaysList.push({
+      dateStr: `${y}-${m}-${d}`,
+      displayDate: `${date.getMonth() + 1}/${date.getDate()}`,
+      label: weekLabels[date.getDay()]
+    })
+  }
+
+  // 2. 收集當周所有任務
+  const allTasks = []
+  for (const day of weekDaysList) {
+    const tasks = tasksCache.value[day.dateStr] || []
+    for (const t of tasks) {
+      allTasks.push({ ...t, _displayDate: day.displayDate, _label: day.label })
+    }
+  }
+
+  // 3. 按狀態統計
+  const statusMap = {}
+  for (const t of allTasks) {
+    const s = t.status || '未知'
+    statusMap[s] = (statusMap[s] || 0) + 1
+  }
+
+  // 4. 建構 TXT 內容
+  const lines = []
+  lines.push(`OIO 當周任務報告`)
+  lines.push(`${weekRangeDisplay.value} ${weekRangeWeekdays.value}`)
+  lines.push(`匯出時間: ${new Date().toLocaleString('zh-TW')}`)
+  lines.push(`${'='.repeat(40)}`)
+  lines.push('')
+  lines.push('【按狀態統計】')
+  lines.push('-'.repeat(20))
+  const total = allTasks.length
+  for (const [status, count] of Object.entries(statusMap)) {
+    lines.push(`  ${status}: ${count} 個任務`)
+  }
+  lines.push(`  合計: ${total} 個任務`)
+  lines.push('')
+  lines.push('【詳細任務列表】')
+  lines.push('-'.repeat(20))
+  for (const day of weekDaysList) {
+    const tasks = tasksCache.value[day.dateStr] || []
+    if (tasks.length === 0) continue
+    lines.push(``)
+    lines.push(`[${day.displayDate} (${day.label})]`)
+    for (const t of tasks) {
+      const icon = isTaskCompleted(t) ? '✅' : '○'
+      const duration = t.duration ? ` (⏱️ ${t.duration}h)` : ''
+      lines.push(`  ${icon} [${t.status}] ${t.title}${duration}`)
+    }
+  }
+  lines.push('')
+  lines.push(`${'='.repeat(40)}`)
+
+  // 5. 觸發下載
+  const content = lines.join('\n')
+  const blob = new Blob(['\uFEFF' + content], { type: 'text/plain;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `OIO_週報_${weekRangeDisplay.value.replace(/\//g, '-').replace(' - ', '_')}.txt`
+  a.click()
+  URL.revokeObjectURL(url)
 }
 
 // ========================================
